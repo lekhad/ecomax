@@ -521,7 +521,7 @@ class ProductsController extends Controller
     public function cart(){
 
         $session_id= Session::get('session_id');
-
+        // Removing unnecesssary files
         if(Auth::check()){
             $user_email= Auth::user()->email;
             $userCart=  DB::table('cart')->where(['user_email'=>$user_email])->get();
@@ -796,8 +796,8 @@ class ProductsController extends Controller
             $cartProducts= DB::table('cart')->where(['user_email'=>$user_email])->get();
             foreach($cartProducts as $pro){
                 $cartPro= new OrdersProduct;
-                $cartPro->order_id= $order_id;
-                $cartPro->user_id= $user_id;
+                $cartPro->order_id=      $order_id;
+                $cartPro->user_id=       $user_id;
                 $cartPro->product_id=    $pro->product_id;
                 $cartPro->product_code=  $pro->product_code;
                 $cartPro->product_name=  $pro->product_name;
@@ -817,7 +817,17 @@ class ProductsController extends Controller
     }
 
     public function thanks(Request $request){
+        $user_email= Auth::user()->email;
+        DB::table('cart')->where('user_email', $user_email)->delete();
         return view('products.thanks');
+    }
+
+    public function userOrders(){
+        $user_id= Auth::user()->id;
+        $orders= Order::with('orders')->where('user_id', $user_id)->orderBy('id', 'DESC')->get();
+//        $orders= json_decode(json_encode($orders));
+//        echo "<pre>"; print_r($orders); die;
+        return view('products.user_orders')->with(compact('orders'));
     }
 
 }

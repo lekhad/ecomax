@@ -89,6 +89,9 @@ Route::group(['middleware'=> ['frontLogin']], function(){
 
     //Thanks Page
     Route::get('/thanks', 'ProductsController@thanks');
+
+    //Users Orders Page
+    Route::get('/orders', 'ProductsController@userOrders');
 });
 //Route::match(['get', 'post'], '/login-register', 'UsersController@register');
 
