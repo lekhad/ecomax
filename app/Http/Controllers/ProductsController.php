@@ -474,14 +474,22 @@ class ProductsController extends Controller
     }
 
     public function addtocart(Request $request){
+
         Session::forget('CouponAmount');
         Session::forget('CouponCode');
 
         $data= $request->all();
 //        echo "<pre>"; print_r($data); die;
         // The price is also updated in the main.js for the ajax ("#price").val
-        if(empty($data['user_email'])){
-            $data['user_email']= '';
+
+//
+//        if(empty($data['user_email'])){
+//            $data['user_email']= '';
+//        }
+        if(empty(Auth::user()->email)){
+            $data['user_email']='';
+        }else{
+            $data['user_email']= Auth::user()->email;
         }
 
         $session_id= Session::get('session_id');
@@ -798,9 +806,18 @@ class ProductsController extends Controller
                 $cartPro->product_price= $pro->price;
                 $cartPro->product_qty=   $pro->quantity;
                 $cartPro->save();
-
             }
+
+            Session::put('order_id', $order_id);
+            Session::put('grand_total', $data['grand_total']);
+
+            //Redirect user to thanks page after saving order
+            return redirect('/thanks');
         }
+    }
+
+    public function thanks(Request $request){
+        return view('products.thanks');
     }
 
 }
