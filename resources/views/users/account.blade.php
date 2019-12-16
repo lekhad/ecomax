@@ -37,7 +37,7 @@
                             </select>
                             <input value="{{ $userDetails->pincode }}" style="margin-top: 10px;"  id="pincode" name="pincode" type="text" placeholder="Pincode"/>
                             <input value="{{ $userDetails->mobile }}" id="mobile" name="mobile" type="text" placeholder="Mobile"/>
-                            <button type="submit" class="btn btn-default">Signup</button>
+                            <button type="submit" class="btn btn-default">Update</button>
                         </form>
                     </div><!--/login form-->
                 </div>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Country;
 use App\Coupon;
 use App\DeliveryAddress;
+use App\Order;
+use App\OrdersProduct;
 use App\ProductsAttribute;
 use App\ProductsImage;
 use App\User;
@@ -511,9 +513,17 @@ class ProductsController extends Controller
     public function cart(){
 
         $session_id= Session::get('session_id');
-        $userCart=  DB::table('cart')->where(['session_id'=>$session_id])->get();
+
+        if(Auth::check()){
+            $user_email= Auth::user()->email;
+            $userCart=  DB::table('cart')->where(['user_email'=>$user_email])->get();
+        }else{
+            $session_id= Session::get('session_id');
+            $userCart=  DB::table('cart')->where(['session_id'=>$session_id])->get();
+        }
+//        $userCart=  DB::table('cart')->where(['session_id'=>$session_id])->get();
         foreach($userCart as $key=> $product){
-//            echo $product->product_id;
+//            echo $product->product_id; die;
             $productDetails= Product::where('id', $product->product_id)->first();
 //            $userCart[$key]->image= "test";
             $userCart[$key]->image= $productDetails->image;
@@ -580,14 +590,25 @@ class ProductsController extends Controller
                 return redirect()->back()->with('flash_message_error','This coupon has expired');
             }
 
+
             //Coupon is Valid for discount
             //Check if amount type is fixed or percentage
 
             // Get Cart Total Amount
 
 
+
             $session_id= Session::get('session_id');
             $userCart= DB::table('cart')->where(['session_id'=> $session_id])->get();
+
+            if(Auth::check()){
+                $user_email= Auth::user()->email;
+                $userCart= DB::table('cart')->where(['user_email'=>$user_email])->get();
+            }else{
+                $session_id= Session::get('session_id');
+                $userCart= DB::table('cart')->where(['session_id'=> $session_id])->get();
+            }
+
             $total_amount=0;
             foreach($userCart as $item){
                 $total_amount= $total_amount + ($item->price* $item->quantity);
@@ -602,6 +623,8 @@ class ProductsController extends Controller
             if($couponDetails->amount_type=="Fixed"){
                 $couponAmount= $couponDetails->amount;
             }else{
+//                echo $total_amount; die;
+                // The Total Amount worked until the if Auth::check is done above
                 $couponAmount= $total_amount * ($couponDetails->amount/100);
             }
 //                        echo $couponAmount; die;
@@ -624,25 +647,31 @@ class ProductsController extends Controller
 
         $shippingCount= DeliveryAddress::where('user_id', $user_id)->count();
 
+        $shippingDetails= array();
         if($shippingCount > 0){
             $shippingDetails = DeliveryAddress::where('user_id', $user_id)->first();
-        }else{
-//            return view('products.checkout');
-            $data= $request->all();
-            $shipping= new DeliveryAddress;
-            $shipping->user_id= $user_id;
-            $shipping->user_email= $user_email;
-            $shipping->name=    '';
-            $shipping->address= '';
-            $shipping->city=    '';
-            $shipping->state=  '';
-            $shipping->pincode= '';
-            $shipping->country= '';
-            $shipping->mobile= '';
-            $shipping->save();
-            die;
-
         }
+
+        // Intuitive way of solving the bug withour assigning array to the shippingDetails and the checking if array exist in vlaues of input fields of checkout.blade.php
+//
+//        if($shippingCount > 0){
+//            $shippingDetails = DeliveryAddress::where('user_id', $user_id)->first();
+//        }else{
+////            return view('products.checkout');
+//            $data= $request->all();
+//            $shipping= new DeliveryAddress;
+//            $shipping->user_id= $user_id;
+//            $shipping->user_email= $user_email;
+//            $shipping->name=    '';
+//            $shipping->address= '';
+//            $shipping->city=    '';
+//            $shipping->state=  '';
+//            $shipping->pincode= '';
+//            $shipping->country= '';
+//            $shipping->mobile= '';
+//            $shipping->save();
+//            die;
+//        }
 
         // Update cart Table with the user email
         $session_id= Session::get('session_id');
@@ -695,10 +724,83 @@ class ProductsController extends Controller
 
         $userDetails= User::where('id', $user_id)->first();
         $shippingDetails= DeliveryAddress::where('user_id', $user_id)->first();
-        $shippingDetails= json_decode(json_encode($shippingDetails));
+//        $shippingDetails= json_decode(json_encode($shippingDetails));
 //        echo "<pre>"; print_r($shippingDetails); die;
 
-        return view('products.order_review')->with(compact('userDetails', 'shippingDetails'));
+        $userCart=  DB::table('cart')->where(['user_email'=> $user_email])->get();
+        foreach($userCart as $key=> $product){
+            $productDetails= Product::where('id', $product->product_id)->first();
+            $userCart[$key]->image= $productDetails->image;
+        }
+//        foreach ($userCart as $cart){
+//            echo "<pre>"; print_r($cart); die;
+//        }
+
+//        echo "<pre>"; print_r($productDetails); die;
+//        echo "<pre>"; print_r($userCart); die;
+        return view('products.order_review')->with(compact('userDetails', 'shippingDetails', 'userCart'));
+    }
+
+    public function placeOrder(Request $request){
+        if($request->isMethod('post')){
+            $data= $request->all();
+            $user_id= Auth::user()->id;
+            $user_email= Auth::user()->email;
+//            echo "<pre>"; print_r($data); die;
+
+            // Get Shipping Address of User
+            $shippingDetails= DeliveryAddress::where(['user_email'=>$user_email])->first();
+            $shippingDetails= json_decode(json_encode($shippingDetails));
+
+//            echo "<pre>"; print_r($shippingDelivery); die;
+//            echo $username= Auth::user()->name;
+
+            if(empty(Session::get('CouponCode'))){
+                $coupon_code= '';
+            }else{
+                $coupon_code= Session::get('CouponCode');
+            }
+
+            if(empty(Session::get('CouponAmount'))){
+                $coupon_amount= '';
+            }else{
+                $coupon_amount= Session::get('CouponAmount');
+            }
+            $order= new Order;
+            $order->user_id= $user_id;
+            $order->user_email= $user_email;
+            $order->name= $shippingDetails->name;
+            $order->address= $shippingDetails->address;
+            $order->city= $shippingDetails->city;
+            $order->state= $shippingDetails->state;
+            $order->pincode= $shippingDetails->pincode;
+            $order->country= $shippingDetails->country;
+            $order->mobile= $shippingDetails->mobile;
+            $order->coupon_code= $coupon_code;
+            $order->coupon_amount= $coupon_amount;
+            $order->order_status= "New";
+            $order->payment_method= $data['payment_method'];
+            $order->grand_total= $data['grand_total'];
+            $order->save();
+
+            $order_id= DB::getPdo()->lastInsertId();
+
+            $cartProducts= DB::table('cart')->where(['user_email'=>$user_email])->get();
+            foreach($cartProducts as $pro){
+                $cartPro= new OrdersProduct;
+                $cartPro->order_id= $order_id;
+                $cartPro->user_id= $user_id;
+                $cartPro->product_id=    $pro->product_id;
+                $cartPro->product_code=  $pro->product_code;
+                $cartPro->product_name=  $pro->product_name;
+                $cartPro->product_color= $pro->product_color;
+                $cartPro->product_size=  $pro->size;
+                $cartPro->product_price= $pro->price;
+                $cartPro->product_qty=   $pro->quantity;
+                $cartPro->save();
+
+            }
+        }
     }
 
 }
