@@ -775,17 +775,17 @@ class ProductsController extends Controller
                 $coupon_amount= Session::get('CouponAmount');
             }
             $order= new Order;
-            $order->user_id= $user_id;
-            $order->user_email= $user_email;
-            $order->name= $shippingDetails->name;
-            $order->address= $shippingDetails->address;
-            $order->city= $shippingDetails->city;
-            $order->state= $shippingDetails->state;
-            $order->pincode= $shippingDetails->pincode;
-            $order->country= $shippingDetails->country;
-            $order->mobile= $shippingDetails->mobile;
-            $order->coupon_code= $coupon_code;
-            $order->coupon_amount= $coupon_amount;
+            $order->user_id=      $user_id;
+            $order->user_email=   $user_email;
+            $order->name=         $shippingDetails->name;
+            $order->address=      $shippingDetails->address;
+            $order->city=         $shippingDetails->city;
+            $order->state=        $shippingDetails->state;
+            $order->pincode=      $shippingDetails->pincode;
+            $order->country=      $shippingDetails->country;
+            $order->mobile=       $shippingDetails->mobile;
+            $order->coupon_code=  $coupon_code;
+            $order->coupon_amount=$coupon_amount;
             $order->order_status= "New";
             $order->payment_method= $data['payment_method'];
             $order->grand_total= $data['grand_total'];
@@ -811,15 +811,35 @@ class ProductsController extends Controller
             Session::put('order_id', $order_id);
             Session::put('grand_total', $data['grand_total']);
 
-            //Redirect user to thanks page after saving order
-            return redirect('/thanks');
+            if($data['payment_method']=="COD"){
+                // COD Redirect user to thanks page after saving order
+                return redirect('/thanks');
+            }else{
+                // Paypal- Redirect user to thanks page after saving order
+                return redirect('/paypal');
+            }
+
         }
+    }
+
+    public function thanksPaypal(){
+        return view('orders.thanks_paypal');
     }
 
     public function thanks(Request $request){
         $user_email= Auth::user()->email;
         DB::table('cart')->where('user_email', $user_email)->delete();
-        return view('products.thanks');
+        return view('orders.thanks');
+    }
+
+    public function paypal(Request $request){
+        $user_email= Auth::user()->email;
+        DB::table('cart')->where('user_email', $user_email)->delete();
+        return view('orders.paypal');
+    }
+
+    public function cancelPaypal(){
+        return view('orders.cancel_paypal');
     }
 
     public function userOrders(){
@@ -827,7 +847,30 @@ class ProductsController extends Controller
         $orders= Order::with('orders')->where('user_id', $user_id)->orderBy('id', 'DESC')->get();
 //        $orders= json_decode(json_encode($orders));
 //        echo "<pre>"; print_r($orders); die;
-        return view('products.user_orders')->with(compact('orders'));
+        return view('orders.user_orders')->with(compact('orders'));
+    }
+
+    public function userOrderDetails($order_id){
+        $user_id= Auth::user()->id;
+        $orderDetails= Order::with('orders')->where('id', $order_id)->first();
+        $orderDetails= json_decode(json_encode($orderDetails));
+//        echo "<pre>"; print_r($orderDetails); die;
+
+        return view('orders.user_order_details')->with(compact('orderDetails'));
+    }
+
+    public function viewOrders(){
+        $orders= Order::with('orders')->orderBy('id', 'Desc')->get();
+        $orders= json_decode(json_encode($orders));
+//        echo "<pre>"; print_r($orders);die;
+        return view('admin.orders.view_orders')->with(compact('orders'));
+    }
+
+    public function viewOrderDetails($order_id){
+        $orderDetails= Order::with('orders')->where('id', $order_id)->first();
+        $orderDetails= json_decode(json_encode($orderDetails));
+//        echo "<pre>"; print_r($orderDetails); die;
+        return view('admin.orders.order_details')->with(compact('orderDetails'));
     }
 
 }

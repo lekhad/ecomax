@@ -6,6 +6,7 @@ use App\Country;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 
@@ -24,6 +25,12 @@ class UsersController extends Controller
 //            echo "<pre>"; print_r($data); die;
             if(Auth::attempt(['email'=>$data['email'], 'password'=>$data['password']])){
                 Session::put('frontSession', $data['email']);
+
+                if(!empty(Session::get('session_id'))){
+                    $session_id= Session::get('session_id');
+                    DB::table('cart')->where('session_id',  $session_id)->update(['user_email'=>$data['email']]);
+                }
+
                 return redirect('/cart');
             }else{
                 return redirect()->back()->with('flash_message_error','Invalid Username or Password');
@@ -49,6 +56,11 @@ class UsersController extends Controller
                 $user->save();
                 if(Auth::attempt(['email'=>$data['email'], 'password'=>$data['password']])){
                     Session::put('frontSession', $data['email']);
+
+                    if(!empty(Session::get('session_id'))){
+                        $session_id= Session::get('session_id');
+                        DB::table('cart')->where('session_id',  $session_id)->update(['user_email'=>$data['email']]);
+                    }
                     return redirect('/cart');
                 }
             }
@@ -135,6 +147,7 @@ class UsersController extends Controller
     public function logout(){
         Auth::logout();
         Session::forget('frontSession');
+        Session::forget('session_id');
         return redirect('/');
     }
 

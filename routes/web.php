@@ -90,8 +90,20 @@ Route::group(['middleware'=> ['frontLogin']], function(){
     //Thanks Page
     Route::get('/thanks', 'ProductsController@thanks');
 
+    //Paypal Page
+    Route::get('/paypal', 'ProductsController@paypal');
+
     //Users Orders Page
     Route::get('/orders', 'ProductsController@userOrders');
+
+    //User ordered product pages
+    Route::get('/orders/{id}', 'ProductsController@userOrderDetails');
+
+    // Paypal Thanks Page
+    Route::get('/paypal/thanks', 'ProductsController@thanksPaypal');
+
+    // Paypal Cancel Page
+    Route::get('/paypal/cance', 'ProductsController@cancelPaypal');
 });
 //Route::match(['get', 'post'], '/login-register', 'UsersController@register');
 
@@ -147,6 +159,12 @@ Route::group(['middleware'=>['auth']], function(){
     Route::match(['get', 'post'], '/admin/edit-banner/{id}', 'BannersController@editBanner');
     Route::get('/admin/view-banners', 'BannersController@viewBanners');
     Route::get('/admin/delete-banner/{id}', 'BannersController@deleteBanner');
+
+    //Admin Orders Routes
+    Route::get('/admin/view-orders', 'ProductsController@viewOrders');
+
+    // Admin Order Details Route
+    Route::get('/admin/view-order/{id}', 'ProductsController@viewOrderDetails');
 
 });
 
