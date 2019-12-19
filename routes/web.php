@@ -63,6 +63,10 @@ Route::get('/login-register', 'UsersController@userLoginRegister');
 // Users Register Form Submit
 Route::post('/user-register', 'UsersController@register');
 
+//Confirm Account
+
+Route::get('confirm/{code}', 'UsersController@confirmAccount');
+
 Route::post('/user-login', 'UsersController@login');
 
 Route::get('/user-logout', 'UsersController@logout');
@@ -119,7 +123,8 @@ Route::get('/logout', 'AdminController@logout');
 
 // The admin/dashboard route works until being set in the RedirectIfAuthenticated
 
-Route::group(['middleware'=>['auth']], function(){
+//Route::group(['middleware'=>['auth']], function(){
+Route::group(['middleware'=>['adminLogin']], function(){
     Route::get('/admin/dashboard', 'AdminController@dashboard');
     Route::get('/admin/settings', 'AdminController@settings');
 

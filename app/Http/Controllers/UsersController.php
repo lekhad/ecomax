@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 
 class UsersController extends Controller
@@ -24,6 +25,11 @@ class UsersController extends Controller
             $data= $request->all();
 //            echo "<pre>"; print_r($data); die;
             if(Auth::attempt(['email'=>$data['email'], 'password'=>$data['password']])){
+
+                $userStatus= User::where('email', $data['email'])->first();
+                if($userStatus->status==0){
+                    return redirect()->back()->with('flash_message_error', 'Your account is not activated! Please confirm your email to activate your account');
+                }
                 Session::put('frontSession', $data['email']);
 
                 if(!empty(Session::get('session_id'))){
@@ -53,7 +59,28 @@ class UsersController extends Controller
                 $user->name=     $data['name'];
                 $user->email=    $data['email'];
                 $user->password= bcrypt($data['password']);
+
                 $user->save();
+
+                // Send  Register Email
+
+//                $email= $data['email'];
+//                $messageData= ['email'=> $data['email'], 'name'=> $data['name']];
+//                Mail::send('emails.register', $messageData, function($message) use($email){
+//                    $message->to($email)->subject('Registration with E-commerce Website');
+//                });
+
+                //Send Confirmation Email
+
+                $email= $data['email'];
+                $messageData= ['email'=> $data['email'], 'name'=> $data['name'], 'code'=> base64_encode($data['email'])];
+                Mail::send('emails.confirmation', $messageData, function($message) use($email){
+                   $message->to($email)->subject('Confirm your E-commerce Website');
+                });
+
+                return redirect()->back()->with('flash_message_success', 'Please Confirm Your email to activate your account!');
+
+
                 if(Auth::attempt(['email'=>$data['email'], 'password'=>$data['password']])){
                     Session::put('frontSession', $data['email']);
 
@@ -66,6 +93,37 @@ class UsersController extends Controller
             }
         }
 //        return view('users.login_register');
+    }
+
+    public function confirmAccount($email){
+
+//        echo $email= base64_decode($email);
+        $email= base64_decode($email);
+        $userCount= User::where('email', $email)->count();
+        if($userCount> 0){
+//            echo "success";
+            $userDetails= User::where('email', $email)->first();
+            if($userDetails->status==1){
+                return redirect('login-register')->with('flash_message_success', 'Your Email account is already activated, You can login');
+            }else{
+
+                User::where('email', $email)->update(['status'=>1]);
+
+//                Send  Welcome Email
+
+//                $email= $data['email'];
+
+                $messageData= ['email'=> $email, 'name'=> $userDetails->name];
+                Mail::send('emails.welcome', $messageData, function($message) use($email){
+                    $message->to($email)->subject('Welcome to E-commerce Website');
+                });
+
+                return redirect('login-register')->with('flash_message_success', 'Your Email Account is activated. You can login now');
+            }
+        }else{
+            abort(404);
+        }
+//        echo $email; die;
     }
 
     public function account(Request $request){

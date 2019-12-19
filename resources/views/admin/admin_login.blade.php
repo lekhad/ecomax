@@ -34,15 +34,18 @@
 				 <div class="control-group normal_text"> <h3><img src="{{ asset('images/backend_images/logo.png ') }}" alt="Logo" /></h3></div>
                 <div class="control-group">
                     <div class="controls">
+                        {{--<div class="main_input_box">--}}
+                            {{--<span class="add-on bg_lg"><i class="icon-user"> </i></span><input type="email" name="email" placeholder="Username" />--}}
+                        {{--</div>--}}
                         <div class="main_input_box">
-                            <span class="add-on bg_lg"><i class="icon-user"> </i></span><input type="email" name="email" placeholder="Username" />
+                            <span class="add-on bg_lg"><i class="icon-user"> </i></span><input type="text" name="username" placeholder="Username" id="username" required>
                         </div>
                     </div>
                 </div>
                 <div class="control-group">
                     <div class="controls">
                         <div class="main_input_box">
-                            <span class="add-on bg_ly"><i class="icon-lock"></i></span><input type="password" name="password" placeholder="Password" />
+                            <span class="add-on bg_ly"><i class="icon-lock"></i></span><input type="password" name="password" placeholder="Password" required>
                         </div>
                     </div>
                 </div>

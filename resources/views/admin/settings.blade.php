@@ -33,6 +33,14 @@
                             <div class="widget-content nopadding">
                                 <form class="form-horizontal" method="post" action="{{ url('/admin/update-pwd') }}" name="password_validate" id="password_validate" novalidate="novalidate">
                                     {{ csrf_field() }}
+
+                                    <div class="control-group">
+                                        <label class="control-label">Username</label>
+                                        <div class="controls">
+                                            <input type="text" value="{{ $adminDetails->username }}" readonly="">
+                                        </div>
+                                    </div>
+
                                     <div class="control-group">
                                         <label class="control-label">Current Password</label>
                                         <div class="controls">
