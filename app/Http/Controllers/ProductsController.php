@@ -13,6 +13,7 @@ use App\User;
 use Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Mail;
 use Session;
 use Image;
 use App\Category;
@@ -812,6 +813,33 @@ class ProductsController extends Controller
             Session::put('grand_total', $data['grand_total']);
 
             if($data['payment_method']=="COD"){
+
+//                Code for order email Start here
+
+                $productDetials= Order::with('orders')->where('id', $order_id)->first();
+                $productDetials= json_decode(json_encode($productDetials), true);
+//                echo "<pre>"; print_r($productDetials); die;
+
+               $userDetails= User::where('id', $user_id)->first();
+               $userDetails= json_decode(json_encode($userDetails), true);
+//                echo "<pre>"; print_r($userDetails); die;
+
+                $email= $user_email;
+                $messageData= [
+                    'email'=> $email,
+                    'name'  => $shippingDetails->name,
+                    'order_id'=> $order_id,
+                    'productDetails'=> $productDetials,
+                    'userDetails'=> $userDetails
+                ];
+
+                Mail::send('emails.order', $messageData, function($message) use($email){
+                    $message->to($email)->subject('Order Placed - E-Com Website');
+                });
+
+//                Code for order Email ends here
+
+
                 // COD Redirect user to thanks page after saving order
                 return redirect('/thanks');
             }else{

@@ -98,6 +98,7 @@ class UsersController extends Controller
     public function confirmAccount($email){
 
 //        echo $email= base64_decode($email);
+
         $email= base64_decode($email);
         $userCount= User::where('email', $email)->count();
         if($userCount> 0){
@@ -217,6 +218,12 @@ class UsersController extends Controller
         }else{
             echo "true"; die;
         }
+    }
+
+
+    public function viewUsers(){
+        $users= User::get();
+        return view('admin.users.view_users')->with(compact('users'));
     }
 
 }
