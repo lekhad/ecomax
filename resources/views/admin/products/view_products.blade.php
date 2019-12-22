@@ -42,6 +42,7 @@
                                     <th>Product Color</th>
                                     <th>Price</th>
                                     <th>Image</th>
+                                    <th>Feature Item</th>
                                     <th>Actions</th>
                                 </tr>
                                 </thead>
@@ -60,6 +61,7 @@
                                                 <img src="{{ asset('/images/backend_images/products/small/'.$product->image) }}" style="width: 50px; height: 50px;">
                                             @endif
                                         </td>
+                                        <td>@if($product->feature_item==1) Yes @else No @endif </td>
                                         <td class="center">
                                             <a href="#myModal{{$product->id}}" data-toggle="modal"  class="btn btn-success btn-mini" title="View Product">View</a>
                                             <a href="{{ url('/admin/edit-product/'.$product->id) }}" class="btn btn-primary btn-mini" title="Edit Product">Edit</a>

@@ -60,6 +60,8 @@ Route::post('/cart/apply-coupon', 'ProductsController@applyCoupon');
 //Register/ Login
 Route::get('/login-register', 'UsersController@userLoginRegister');
 
+Route::match(['get', 'post'], 'forgot-password', 'UsersController@forgotPassword');
+
 // Users Register Form Submit
 Route::post('/user-register', 'UsersController@register');
 
@@ -70,6 +72,10 @@ Route::get('confirm/{code}', 'UsersController@confirmAccount');
 Route::post('/user-login', 'UsersController@login');
 
 Route::get('/user-logout', 'UsersController@logout');
+
+//Search Products
+
+Route::post('/search-products', 'ProductsController@searchProducts');
 
 //All Routes after Login
 Route::group(['middleware'=> ['frontLogin']], function(){
@@ -170,6 +176,9 @@ Route::group(['middleware'=>['adminLogin']], function(){
 
     // Admin Order Details Route
     Route::get('/admin/view-order/{id}', 'ProductsController@viewOrderDetails');
+
+    // Order Invoice
+    Route::get('/admin/view-order-invoice/{id}', 'ProductsController@viewOrderInvoice');
 
     // Update Order Status
     Route::post('/admin/update-order-status', 'ProductsController@updateOrderStatus');

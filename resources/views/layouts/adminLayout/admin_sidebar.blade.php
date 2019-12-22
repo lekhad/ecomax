@@ -36,6 +36,13 @@
             </ul>
         </li>
 
+        <li class="submenu"> <a href="#"><i class="icon icon-th-list"></i> <span>Users</span> <span class="label label-important">2</span></a>
+            <ul <?php if(preg_match("/user/i", $url)){ ?> style="display: block; "<?php } ?>>
+                <li <?php if (preg_match("/view-users/i", $url)){?> class="active" <?php } ?>><a href="{{ url('/admin/view-users') }}">View Users</a></li>
+            </ul>
+        </li>
+
+
     </ul>
 </div>
 <!--sidebar-menu-->

@@ -82,7 +82,17 @@ class ProductsController extends Controller
             }else{
                 $status=1;
             }
+
+
+            if(empty($data['feature_item'])){
+                $feature_item =0;
+            }else{
+                $feature_item =1;
+            }
+
+            $product->feature_item= $feature_item;
             $product->status= $status;
+
             $product->save();
 //            return redirect()->back()->with('flash_message_success', 'Product has been added Successfully');
             return redirect('/admin/view-products')->with('flash_message_success', 'Product has been added successfully');
@@ -144,8 +154,14 @@ class ProductsController extends Controller
                 $status=1;
             }
 
+            if(empty($data['feature_item'])){
+                $feature_item=0;
+            }else{
+                $feature_item=1;
+            }
+
             // Updating the product
-            Product::where(['id'=> $id])->update(['category_id'=>$data['category_id'],'product_name'=>$data['product_name'], 'product_code'=>$data['product_code'],'product_color'=>$data['product_color'],'description'=>$data['description'],'care'=>$data['care'], 'price'=>$data['price'], 'image'=> $filename, 'status'=>$status]);
+            Product::where(['id'=> $id])->update(['category_id'=>$data['category_id'],'product_name'=>$data['product_name'], 'product_code'=>$data['product_code'],'product_color'=>$data['product_color'],'description'=>$data['description'],'care'=>$data['care'], 'price'=>$data['price'], 'image'=> $filename, 'status'=>$status, 'feature_item'=>$feature_item]);
             return redirect()->back()->with('flash_message_success', 'Product has been updated Successfully');
         }
 
@@ -390,7 +406,6 @@ class ProductsController extends Controller
 //        echo $url; die;
 
         // Show 404 page if the url category does not exist
-
         $countCategory= Category::where(['url'=> $url, 'status'=>1])->count();
         if($countCategory==0){
             abort(404);
@@ -413,17 +428,32 @@ class ProductsController extends Controller
             }
 //            echo $cat_ids; die;
 //            print_r($cat_ids); die;
-            $productsAll= Product::whereIn('category_id', $cat_ids)->where('status', 1)->get();
+            $productsAll= Product::whereIn('category_id', $cat_ids)->where('status', 1)->paginate(3);
             $productsAll = json_decode(json_encode($productsAll));
 //            echo "<pre>"; print_r($productsAll); die;
         }else{
             // if url is sub category url
-            $productsAll= Product::where(['category_id' => $categoryDetails->id])->where('status', 1)->get();
+            $productsAll= Product::where(['category_id' => $categoryDetails->id])->where('status', 1)->paginate(3);
         }
         // End working for Vd 025
 
         return view('products.listing')->with(compact('categories','categoryDetails', 'productsAll'));
     }
+
+    public function searchProducts(Request $request){
+        if($request->isMethod('post')){
+            $data= $request->all();
+//            echo "<pre>"; print_r($data);die;
+            $categories= Category::with('categories')->where(['parent_id'=>0])->get();
+
+            $search_product= $data['product'];
+
+            $productsAll=   Product::where('product_name', 'like', '%'.$search_product.'%')->orwhere('product_code', $search_product)->where('status', 1)->get();
+
+            return view('products.listing')->with(compact('categories', 'productsAll', 'search_product'));
+        }
+    }
+
 
     public function product($id= null){
 
@@ -481,17 +511,33 @@ class ProductsController extends Controller
 
         $data= $request->all();
 //        echo "<pre>"; print_r($data); die;
+
+
         // The price is also updated in the main.js for the ajax ("#price").val
 
 //
 //        if(empty($data['user_email'])){
 //            $data['user_email']= '';
 //        }
+
+        // Check Product Stock is available or not
+//        $product_size= explode("-", $data['size']);
+        $product_size= explode("-", $data['size']);
+//        echo $product_size[1]; die;
+        $getProductStock= ProductsAttribute::where(['product_id'=> $data['product_id'], 'size'=> $product_size[1]])->first();
+
+        //echo $getProductStock->stock;
+
+        if($getProductStock->stock< $data['quantity']){
+            return redirect()->back()->with('flash_message_error', 'Required Quantity is not available');
+        }
+
         if(empty(Auth::user()->email)){
             $data['user_email']='';
         }else{
             $data['user_email']= Auth::user()->email;
         }
+
 
         $session_id= Session::get('session_id');
 
@@ -501,20 +547,42 @@ class ProductsController extends Controller
         }
 
         $sizeArr= explode("-", $data['size']);
+        $product_size= $sizeArr[1];
 
-        $countProducts= DB::table('cart')->where(['product_id'=>$data['product_id'], 'product_color'=>$data['product_color'],'size'=>$sizeArr[1], 'session_id'=>$session_id])->count();
+        if(empty(Auth::check())){
+            $countProducts= DB::table('cart')->where(['product_id'=>$data['product_id'], 'product_color'=>$data['product_color'],'size'=>$product_size, 'session_id'=>$session_id])->count();
 
-//        echo $countProducts; die;
-        if($countProducts> 0){
-            return redirect()->back()->with('flash_message_error', 'Product already exist in cart');
+                if($countProducts> 0){
+                    return redirect()->back()->with('flash_message_error', 'Product already exist in cart');
+                }
         }else{
+            $countProducts= DB::table('cart')->where(['product_id'=>$data['product_id'], 'product_color'=>$data['product_color'],'size'=>$product_size, 'user_email'=> $data['user_email']])->count();
+
+                if($countProducts> 0){
+                    return redirect()->back()->with('flash_message_error', 'Product already exist in cart');
+                }
+        }
+
+//        echo $data['size']; die;
+
+
             // Updating the SKU size for the cart table
             $getSKU= ProductsAttribute::select('sku')->where(['product_id'=>$data['product_id'], 'size'=>$sizeArr[1]])->first();
 
             DB::table('cart')->insert(['product_id'=>$data['product_id'], 'product_name'=>$data['product_name'], 'product_code'=> $getSKU->sku, 'product_color'=>$data['product_color'],'price'=>$data['price'],'size'=>$sizeArr[1],'quantity'=>$data['quantity'],'user_email'=>$data['user_email'],'session_id'=>$session_id]);
 
+
+//        echo $countProducts; die;
+//        if($countProducts> 0){
+//            return redirect()->back()->with('flash_message_error', 'Product already exist in cart');
+//        }else{
+//            // Updating the SKU size for the cart table
+//            $getSKU= ProductsAttribute::select('sku')->where(['product_id'=>$data['product_id'], 'size'=>$sizeArr[1]])->first();
+//
+//            DB::table('cart')->insert(['product_id'=>$data['product_id'], 'product_name'=>$data['product_name'], 'product_code'=> $getSKU->sku, 'product_color'=>$data['product_color'],'price'=>$data['price'],'size'=>$sizeArr[1],'quantity'=>$data['quantity'],'user_email'=>$data['user_email'],'session_id'=>$session_id]);
+
 //            DB::table('cart')->insert(['product_id'=>$data['product_id'], 'product_name'=>$data['product_name'], 'product_code'=>$data['product_code'],'product_color'=>$data['product_color'],'price'=>$data['price'],'size'=>$sizeArr[1],'quantity'=>$data['quantity'],'user_email'=>$data['user_email'],'session_id'=>$session_id]);
-        }
+//        }
 
         return redirect('cart')->with('flash_message_success', 'Product has been added in Cart!');
     }
@@ -905,6 +973,21 @@ class ProductsController extends Controller
         return view('admin.orders.order_details')->with(compact('orderDetails', 'userDetails'));
     }
 
+
+    public function viewOrderInvoice($order_id){
+        $orderDetails= Order::with('orders')->where('id', $order_id)->first();
+        $orderDetails= json_decode(json_encode($orderDetails));
+//        echo "<pre>"; print_r($orderDetails); die;
+
+
+        $user_id= $orderDetails->user_id;
+        $userDetails= User::where('id', $user_id)->first();
+//        $userDetails= json_decode(json_encode($userDetails));
+//        echo "<pre>"; print_r($userDetails); die;
+        return view('admin.orders.order_invoice')->with(compact('orderDetails', 'userDetails'));
+    }
+
+
     public function updateOrderStatus(Request $request){
         if($request->isMethod('post')){
             $data= $request->all();
@@ -913,5 +996,6 @@ class ProductsController extends Controller
             return redirect()->back()->with('flash_message_success', 'Order Status has been update successfully');
         }
     }
+
 
 }

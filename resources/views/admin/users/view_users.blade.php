@@ -46,23 +46,28 @@
                                     <th>Status</th>
                                     <th>Registered On</th>
 
-
                                 </tr>
                                 </thead>
                                 <tbody>
                                 @foreach($users as $user)
                                     <tr class="gradeX">
-                                        <td class="center">{{$user->id}}</td>
-                                        <td class="center">{{$user->created_at}}</td>
+                                        <td class="center">{{ $user->id }}</td>
                                         <td class="center">{{$user->name}}</td>
-                                        <td class="center">{{$user->user_email}}</td>
-                                        <td class="center">{{$order->grand_total}}</td>
-                                        <td class="center">{{$order->order_status}}</td>
-                                        <td class="center">{{$order->payment_method}}</td>
-
+                                        <td class="center">{{$user->address}}</td>
+                                        <td class="center">{{$user->city}}</td>
+                                        <td class="center">{{$user->state}}</td>
+                                        <td class="center">{{$user->country}}</td>
+                                        <td class="center">{{$user->pincode}}</td>
+                                        <td class="center">{{$user->mobile}}</td>
+                                        <td class="center">{{$user->email}}</td>
                                         <td class="center">
-                                            <a target="_blank" href="{{ url('/admin/view-order/'.$order->id) }}" class="btn btn-success btn-mini">View Order Details</a>
+                                            @if($user->status==1)
+                                                <span style="color:green">Active</span>
+                                            @else
+                                                <span style="color: red">Inactive</span>
+                                            @endif
                                         </td>
+                                        <td class="center">{{$user->created_at}}</td>
                                     </tr>
                                 @endforeach
                                 </tbody>

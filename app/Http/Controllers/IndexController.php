@@ -19,7 +19,7 @@ class IndexController extends Controller
         $productsAll= Product::orderBy('id', 'DESC')->get();
 
         // In Random Order
-        $productsAll= Product::inRandomOrder()->where('status', 1)->get();
+        $productsAll= Product::inRandomOrder()->where('status', 1)->where('feature_item', 1)->paginate(3);
 
         //Get all Categories  and Sub Categories
 // First Approach to returning all the Catgories in Menu and SubMenu Sidebar when toggled
